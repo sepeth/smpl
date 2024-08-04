@@ -19,6 +19,8 @@ include_directories(${GLAD_DIR}/include)
 aux_source_directory(${GLAD_DIR}/src GLAD_SRC)
 
 aux_source_directory(. SRC_LIST)
-add_executable(${PROJECT_NAME} ${SRC_LIST} ${GLAD_SRC})
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw)
+add_executable(first-glfw-glad main.cc ${GLAD_SRC})
+add_executable(draw-rect draw-rect.cc ${GLAD_SRC})
+target_link_libraries(first-glfw-glad PRIVATE glfw)
+target_link_libraries(draw-rect PRIVATE glfw)
 
