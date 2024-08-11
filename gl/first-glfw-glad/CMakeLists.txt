@@ -25,10 +25,12 @@ add_executable(two-triangles-without-EBO two-triangles-without-EBO.cc ${GLAD_SRC
 add_executable(two-triangles-with-EBO two-triangles-with-EBO.cc ${GLAD_SRC})
 add_executable(two-triangles-with-different-VAOs-and-VBOs two-triangles-with-different-VAOs-and-VBOs.cc ${GLAD_SRC})
 add_executable(two-triangles-with-different-colors two-triangles-with-different-colors.cc ${GLAD_SRC})
+add_executable(max-vertex-attrib max-vertex-attrib.cc ${GLAD_SRC})
 target_link_libraries(first-glfw-glad PRIVATE glfw)
 target_link_libraries(draw-rect PRIVATE glfw)
 target_link_libraries(two-triangles-without-EBO PRIVATE glfw)
 target_link_libraries(two-triangles-with-EBO PRIVATE glfw)
 target_link_libraries(two-triangles-with-different-VAOs-and-VBOs PRIVATE glfw)
 target_link_libraries(two-triangles-with-different-colors PRIVATE glfw)
+target_link_libraries(max-vertex-attrib PRIVATE glfw)
 
