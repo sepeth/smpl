@@ -1,0 +1,5 @@
+# clangd creates this
+/.cache
+
+# clangd expects cmake to put compile_commands.json file here
+/build

@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# OS junk
+.DS_Store
+
+# build dirs
+.cache
+build
