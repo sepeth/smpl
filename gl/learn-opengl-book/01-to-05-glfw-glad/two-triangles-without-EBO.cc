@@ -36,6 +36,7 @@ int compileShader(const char *shaderSource, GLenum shaderType) {
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
   if (!success) {
     glGetShaderInfoLog(shader, 512, NULL, infoLog);
+
     std::println(stderr, "Failed to compile the vertex shader: {}", infoLog);
     return -1;
   } else {
@@ -97,9 +98,6 @@ int main(int argc, char *argv[]) {
   /* Print OpenGL version */
   std::println("OpenGL version: {}",
                std::string_view((char *)glGetString(GL_VERSION)));
-
-  /* Set the viewport */
-  glViewport(0, 0, 800, 600);
 
   glfwSetFramebufferSizeCallback(
       window, [](GLFWwindow *window, int width, int height) {

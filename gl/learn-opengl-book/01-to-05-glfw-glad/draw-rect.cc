@@ -100,9 +100,6 @@ int main(int argc, char *argv[]) {
   std::println("OpenGL version: {}",
                std::string_view((char *)glGetString(GL_VERSION)));
 
-  /* Set the viewport */
-  glViewport(0, 0, 800, 600);
-
   glfwSetFramebufferSizeCallback(
       window, [](GLFWwindow *window, int width, int height) {
         std::println("Changing viewport size to {}x{}", width, height);

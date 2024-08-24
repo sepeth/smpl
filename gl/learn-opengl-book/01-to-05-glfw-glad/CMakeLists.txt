@@ -14,7 +14,7 @@ project(main)
 find_package(glfw3 3 REQUIRED)
 
 # glad
-set(GLAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../opengl/glad-opengl3.3-no-ext)
+set(GLAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../opengl/glad-opengl3.3-no-ext)
 include_directories(${GLAD_DIR}/include)
 aux_source_directory(${GLAD_DIR}/src GLAD_SRC)
 
