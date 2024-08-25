@@ -29,3 +29,6 @@ target_link_libraries(textures_combined PRIVATE shad)
 
 add_executable(textures_combined_orig textures_combined_orig.cc)
 target_link_libraries(textures_combined_orig PRIVATE shad)
+
+add_executable(textures_wrapping textures_wrapping.cc)
+target_link_libraries(textures_wrapping PRIVATE shad)
