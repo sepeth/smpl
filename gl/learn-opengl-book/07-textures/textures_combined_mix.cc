@@ -6,12 +6,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-void processInput(GLFWwindow *window) {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-    glfwSetWindowShouldClose(window, true);
-  }
-}
-
 // clang-format off
 float vertices[] = {
     // positions           // colors           // texture coords
@@ -21,16 +15,72 @@ float vertices[] = {
     -0.5f,  0.5f,  0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f   // top left
 };
 
+float mixValue = 0.2;
+
 unsigned int indices[] = {
   0, 1, 3, // first triangle
   1, 2, 3  // second triangle
 };
 // clang-format on
 
-void die(const std::string &msg, int code = 1) {
-  std::println(stderr, "{}", msg);
+void processInput(GLFWwindow *window) {
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, true);
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    mixValue -= 0.01f;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    mixValue += 0.01f;
+  }
+}
+
+template <typename... Args>
+void die(int exitCode, const std::format_string<Args...> &fmt, Args &&...args) {
+  std::cerr << std::vformat(fmt.get(), std::make_format_args(args...))
+            << std::endl;
   glfwTerminate();
-  exit(code);
+  exit(exitCode);
+}
+
+template <typename... Args>
+void die(const std::format_string<Args...> &fmt, Args &&...args) {
+  die(1, fmt, args...);
+}
+
+unsigned int genTexture2D(unsigned char *data, int width, int height,
+                          GLint format = GL_RGB, GLint wrapS = GL_REPEAT,
+                          GLint wrapT = GL_REPEAT, GLint minFilter = GL_LINEAR,
+                          GLint magFilter = GL_LINEAR) {
+  unsigned int texture;
+
+  glGenTextures(/*howmanytextures*/ 1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, /*internalFormat*/ format, width, height,
+               /*legacystuff*/ 0, format, GL_UNSIGNED_BYTE, data);
+
+  // Automatically generate all the required mipmaps for the currently bound
+  // texture
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  return texture;
+}
+
+unsigned char *loadImageOrDie(const char *filePath, int *width, int *height) {
+  int _nrChannels;
+  unsigned char *data = stbi_load(filePath, width, height, &_nrChannels, 0);
+  if (!data) {
+    die("Failed to load the texture file: {}", filePath);
+  }
+  return data;
 }
 
 int main(int argc, char *argv[]) {
@@ -64,13 +114,15 @@ int main(int argc, char *argv[]) {
   std::println("OpenGL version: {}",
                std::string_view((char *)glGetString(GL_VERSION)));
 
-  if (!std::filesystem::exists("vertex.glsl")) {
-    die("vertex.glsl not found");
+  std::string vertexShaderPath = "vertex.glsl";
+  std::string fragmentShaderPath = "fragment_combined_mix.glsl";
+  if (!std::filesystem::exists(vertexShaderPath)) {
+    die("{} not found", vertexShaderPath);
   }
-  if (!std::filesystem::exists("fragment.glsl")) {
-    die("fragment.glsl not found");
+  if (!std::filesystem::exists(fragmentShaderPath)) {
+    die("{} not found", fragmentShaderPath);
   }
-  Shader shader{"vertex.glsl", "fragment.glsl"};
+  Shader shader{vertexShaderPath, fragmentShaderPath};
 
   glfwSetFramebufferSizeCallback(
       window, [](GLFWwindow *window, int width, int height) {
@@ -108,32 +160,26 @@ int main(int argc, char *argv[]) {
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
 
-  // Load the texture
-  int width, height, nrChannels;
-  unsigned char *data =
-      stbi_load("container.jpg", &width, &height, &nrChannels, 0);
-  if (!data) {
-    die("Failed to load texture file");
-  }
+  // Load the first texture
+  int width, height;
+  // tell stb_image.h to flip loaded texture's on the y-axis.
+  stbi_set_flip_vertically_on_load(true);
+  unsigned char *data = loadImageOrDie("container.jpg", &width, &height);
 
-  unsigned int texture;
-  glGenTextures(/*howmanytextures*/ 1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, /*legacystuff*/ 0,
-               GL_RGB, GL_UNSIGNED_BYTE, data);
-  // Automatically generate all the required mipmaps for the currently bound
-  // texture
-  glGenerateMipmap(GL_TEXTURE_2D);
-
+  int texture1 = genTexture2D(data, width, height, GL_RGB, GL_CLAMP_TO_BORDER,
+                              GL_CLAMP_TO_BORDER);
   // now that we have the texture, we can free the image data
   stbi_image_free(data);
+
+  // Load the second texture
+  data = loadImageOrDie("awesomeface.png", &width, &height);
+  int texture2 = genTexture2D(data, width, height, GL_RGBA, GL_CLAMP_TO_BORDER,
+                              GL_CLAMP_TO_BORDER);
+  stbi_image_free(data);
+
+  shader.use();
+  shader.setInt("texture1", 0);
+  shader.setInt("texture2", 1);
 
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
@@ -144,17 +190,21 @@ int main(int argc, char *argv[]) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // set the uniforms
+    shader.setFloat("mixValue", mixValue);
+
     // now render the triangle
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
 
     shader.use();
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-    /* Swap front and back buffers */
+    /* Swap front and back buffers and poll IO events */
     glfwSwapBuffers(window);
-
-    /* Poll for and process events */
     glfwPollEvents();
   }
 
