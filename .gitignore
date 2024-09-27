@@ -37,3 +37,6 @@
 # build dirs
 .cache
 build
+
+# Python Playground
+books/**/*.db
